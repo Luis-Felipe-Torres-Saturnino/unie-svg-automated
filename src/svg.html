@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body{
+            margin: 0;
+            padding: 0;
+        }
+
+        .full-screen-svg {
+            width: 100vw;
+            height: 100vh;
+            background-color: lightgray;
+        }
+
+        #myRect {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        h1:hover{
+            color: aquamarine;
+        }
+
+        #myRect:hover {
+            color: brown;
+            
+            
+        }
+        #myRect.anim{
+            /* animation: anim 1s alternate infinite; */
+            transform: translate(150px, 150px) rotate(45deg);
+        }
+
+
+        @keyframes anim{
+            0%{
+                transform: translate(inherit, 0px) scale(1);
+            }
+            /* 45%{
+                transform: translate(100px, 0px) scale(1);
+            } */
+            50%{
+                transform: translate(100px, 0px) scale(2, 0.5);
+            }
+            /* 55%{
+                transform: translate(100px, 0px) scale(2, 0.5);
+            } */
+            100%{
+                transform: translate(0px, 0px) scale(1);
+            }
+            
+        }
+
+
+        
+    </style>
+</head>
+<body>
+    <h1>Teste SVG</h1>
+    <svg id="svg" class="full-screen-svg" viewBox="0 0 500 500">
+        <rect id="myRect" x="0" y="0" width="100" height="100" style="transform: matrix(1, 0, 0, 1, 50, 200)" />
+    </svg>
+    
+
+
+    <script>
+        const myRect = document.getElementById('myRect');
+
+        // JS-applied transformations for initial positioning
+        /* myRect.style.transform = 'translate(50px, 50px)'; */
+
+        // ... other JavaScript logic ...
+
+
+
+        myRect.addEventListener("click", (ev)=>{
+            myRect.classList.toggle("anim");
+        })
+
+
+        let [w, h] = [100, 100]
+        document.body.addEventListener("keydown", (ev)=>{            
+            let svg = document.getElementById("svg");
+            
+
+            switch (ev.keyCode) {
+                case keyCode.NUMPAD_SUBTRACT:
+                    w -= 25;
+                    h -= 25;
+
+                    svg.setAttribute("viewBox", `0 0 ${w} ${h}`)
+                       
+                    break;
+                case keyCode.NUMPAD_ADD:
+                    w += 25;
+                    h += 25;
+
+                    svg.setAttribute("viewBox", `0 0 ${w} ${h}`)
+                    break;
+                default:
+                    break;
+        }
+    })
+
+
+    let keyCode = {
+        BACKSPACE: 8,
+        COMMA: 188,
+        DELETE: 46,
+        DOWN: 40,
+        END: 35,
+        ENTER: 13,
+        ESCAPE: 27,
+        HOME: 36,
+        LEFT: 37,
+        NUMPAD_ADD: 107,
+        NUMPAD_DECIMAL: 110,
+        NUMPAD_DIVIDE: 111,
+        NUMPAD_ENTER: 108,
+        NUMPAD_MULTIPLY: 106,
+        NUMPAD_SUBTRACT: 109,
+        PAGE_DOWN: 34,
+        PAGE_UP: 33,
+        PERIOD: 190,
+        RIGHT: 39,
+        SPACE: 32,
+        TAB: 9,
+        UP: 38
+    }
+
+    </script>
+</body>
+</html>
