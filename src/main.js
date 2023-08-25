@@ -88,6 +88,14 @@ let Atlas = {
     },
 };
 
+let Unie = {
+    lookAtAngle: null,
+    lookAtPosition: {
+        x: 0,
+        y: 0,
+    }
+}
+
 
 let main, svg;
 
@@ -255,15 +263,12 @@ function SetBody(part, newPart) {
     //console.log(part);
     let atlas = document.getElementById("Sprite_Atlas")
     let unieBodyParent = part.el.parentElement;
-    console.log(unieBodyParent)
+    /* console.log(unieBodyParent) */
 
     for (let [k, v] of Object.entries(UnieBody)) {
         //console.log("Searching... \n",k, v);
         if(v.name == part.name){
-            console.log("found");
-            
-            
-
+            /* console.log("found"); */
             atlas.appendChild(part.el);
             UnieBody.character.el.appendChild(newPart.el);
 
@@ -271,8 +276,8 @@ function SetBody(part, newPart) {
 	        newPart.el.style.display = "";
 
             UnieBody[k] = newPart;
-            console.log(UnieBody);
-            console.log(UnieBody[k]);
+            /* console.log(UnieBody);
+            console.log(UnieBody[k]); */
 
             return;
         }
@@ -340,7 +345,7 @@ function move(newPos = [0, 0], offset = [0,0]){
 }
 
 
-const CartesianPlane = window.addEventListener("pointermove", (ev)=>{
+window.addEventListener("pointermove", (ev)=>{
         
     [mouseX, mouseY] = [ev.clientX, ev.clientY];
     let bbox = UnieBody.head.el.getBBox();
@@ -349,65 +354,80 @@ const CartesianPlane = window.addEventListener("pointermove", (ev)=>{
 
     let unieOriginScreen = {
         x: unieRects.x,
-        y: unieRects.y
+        y: unieRects.y,
+        cx: unieRects.x + unieRects.width/2,
+        cy: unieRects.y + unieRects.height/2,
     };
 
     let unieOriginSvg = {
         x: unieRects.x + svgX,
-        y: unieRects.y + svgY
+        y: unieRects.y + svgY,
+        cx: (unieRects.x + svgX) + unieRects.width/2,
+        cy: (unieRects.y + svgY) + unieRects.height/2,
     };
 
     let [x, y] = [mouseX - unieRects.x, mouseY - unieRects.y];
     
     let distPos = {
         x: x - unieOriginScreen.x,
-        y: y - unieOriginScreen.y
+        y: y - unieOriginScreen.y,
+        cx: x - unieOriginScreen.cx,
+        cy: y - unieOriginScreen.cy
     }
 
     let distPosSvg = {
         x: x - unieOriginSvg.x,
-        y: y - unieOriginSvg.y
+        y: y - unieOriginSvg.y,
+        cx: x - unieOriginSvg.cx,
+        cy: y - unieOriginSvg.cy,
     }
 
 
     
     //Tangente trata ambos. Cosseno é mais seguro e trata horizontal;
 
-    let dist = Math.sqrt(distPos.x * distPos.x + distPos.y * distPos.y);
-    let distSvg = Math.sqrt(distPosSvg.x * distPosSvg.x + distPosSvg.y * distPosSvg.y);
+    let dist = Math.sqrt((distPos.x * distPos.x) + (distPos.y * distPos.y));
+    let distCenter = Math.sqrt((distPos.cx * distPos.cx) + (distPos.cy * distPos.cy));
 
+    let distSvg = Math.sqrt((distPosSvg.x * distPosSvg.x) + (distPosSvg.y * distPosSvg.y));
+    let distSvgCenter = Math.sqrt((distPosSvg.cx * distPosSvg.cx) + (distPosSvg.cy * distPosSvg.cy));
+    
     let ratio = distPosSvg.x / distSvg;
+    //let ratioCenter = distPosSvg.cx / distSvgCenter;
+    let ratioCenter = distPos.cx / distCenter;
+
+    Unie.lookAtAngle = toDegrees(Math.acos(ratioCenter));
 
     console.table({
-        mouseRelativeSvg: {x: x, y: y},
-        currPosScreen: unieOriginScreen,
-        distPos: distPos,
-        dist:dist,
+        /* mouseRelativeSvg: {x: x, y: y}, */
+        /* currPosScreen: unieOriginScreen, */
+        /* distPos: distPos, */
+        /* dist:dist,
         distPosSvg: distPosSvg,
-        distSvg: distSvg,
-        empty: null,
-        ratio: ratio,
-        angleRadian: Math.acos(ratio),
-        angleDegree: toDegrees(Math.acos(ratio)),
+        distSvg: distSvg, */
+        distPosCenterX: distPos.cx,
+        distCenter: distCenter,
+        /* ratio: ratio, */
+        ratioCenter: ratioCenter,
+        /* arcAngleRadian: Math.acos(ratio), */
+        /* arcAngleRadianCenter: Math.acos(ratioCenter),
+        "arcAngleDegreeCenter": toDegrees(Math.acos(ratioCenter)), */
+        cosAngleCenter: Math.cos(ratioCenter),
+        cosAngleDegreeCenter: toDegrees(Math.cos(ratioCenter)),
     })
 
 
-    ray.setAttribute('x1', unieOriginSvg.x);
-    ray.setAttribute('y1', unieOriginSvg.y);
-    ray.setAttribute('x2', x);
-    ray.setAttribute('y2', y);
-
     
-    rayX.setAttribute('x1', unieOriginSvg.x);
-    rayX.setAttribute('y1', unieOriginSvg.y);
-    rayX.setAttribute('x2', x);
-    rayX.setAttribute('y2', unieOriginSvg.y);
-
-    rayY.setAttribute('x1', unieOriginSvg.x);
-    rayY.setAttribute('y1', unieOriginSvg.y);
-    rayY.setAttribute('x2', unieOriginSvg.x);
-    rayY.setAttribute('y2', y);
-
+    /*Unie top left*/
+    /* setLine(ray, unieOriginSvg.x, unieOriginSvg.y, x, y);
+    setLine(rayX, unieOriginSvg.x, unieOriginSvg.y, x, unieOriginSvg.y);
+    setLine(rayY, unieOriginSvg.x, unieOriginSvg.y, unieOriginSvg.x, y); */
+    
+    /* Unie center */
+    setLine(ray, unieOriginSvg.cx, unieOriginSvg.cy, x, unieOriginSvg.cy);
+    setLine(rayX, unieOriginSvg.cx, unieOriginSvg.cy, x, y);
+    setLine(rayY, unieOriginSvg.cx, unieOriginSvg.cy, unieOriginSvg.cx, y);
+    
 
     
 
@@ -440,7 +460,12 @@ function UpdateViewboxData(){
     ratio = w / h;
 }
 
-
+function setLine(line, x1, y1, x2, y2){
+    line.setAttribute('x1', x1);
+    line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2);
+    line.setAttribute('y2', y2);
+}
 
 
 const keyCode = {
@@ -467,3 +492,30 @@ const keyCode = {
 	SPACE: 32,
 	TAB: 9,
 };
+
+
+const Sides = {
+    Left: "left",
+    Right: "right"
+}
+let previousSide = ""
+
+const interval = setInterval(() => {
+    /* console.log(`Deg: ${Unie.lookAtAngle}`) */
+    //SetBody(UnieBody.head, Atlas.headSide1);
+    if(mouseX < window.innerWidth / 2 && previousSide != Sides.Left){
+        previousSide = Sides.Left;
+        console.log(`left`)
+        if(Unie.lookAtAngle <= 60){
+            //UnieBody.head.el.style = "transform: rotateY(180deg)";
+        }
+    }
+    else if(mouseX >= window.innerWidth / 2 && previousSide != Sides.Right){
+        previousSide = Sides.Right;
+        console.log(`right`)
+        if(Unie.lookAtAngle >= 120){
+            //UnieBody.head.el.style = "transform: rotateY(0deg)";
+        }
+        
+    }
+}, 100);
