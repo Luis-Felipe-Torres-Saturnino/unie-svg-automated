@@ -47,7 +47,7 @@ let Atlas = {
         el: ""
     },     
 	headSide2:{
-        name:"",
+        name:"Unie__Head_Side2",
         el: ""
     },     
 	torsoFront:{
@@ -89,7 +89,10 @@ let Atlas = {
 };
 
 let Unie = {
-    lookAtAngle: null,
+    lookAtAngle: {
+        sin: null,
+        cos: null,
+    },
     lookAtPosition: {
         x: 0,
         y: 0,
@@ -148,6 +151,7 @@ const load = async () => {
                 //console.log("Load resources");                
                 for (const [k, v] of Object.entries(Atlas)) {
                     v.el = document.getElementById(v.name);
+                    v.el.classList.add("transform");                            
                     //console.log(k, v);
                 }
 
@@ -382,39 +386,39 @@ window.addEventListener("pointermove", (ev)=>{
         cy: y - unieOriginSvg.cy,
     }
 
-
-    
-    //Tangente trata ambos. Cosseno é mais seguro e trata horizontal;
-
     let dist = Math.sqrt((distPos.x * distPos.x) + (distPos.y * distPos.y));
     let distCenter = Math.sqrt((distPos.cx * distPos.cx) + (distPos.cy * distPos.cy));
 
     let distSvg = Math.sqrt((distPosSvg.x * distPosSvg.x) + (distPosSvg.y * distPosSvg.y));
     let distSvgCenter = Math.sqrt((distPosSvg.cx * distPosSvg.cx) + (distPosSvg.cy * distPosSvg.cy));
     
-    let ratio = distPosSvg.x / distSvg;
-    //let ratioCenter = distPosSvg.cx / distSvgCenter;
-    let ratioCenter = distPos.cx / distCenter;
+    let cosineSvg = distPosSvg.cx / distSvgCenter;
+    //let cosineSvgDegrees = toDegrees(Math.acos(cosineSvg));
 
-    Unie.lookAtAngle = toDegrees(Math.acos(ratioCenter));
+    //Invert sign because mouse (starting points) is at upper left [0, y], not down left [0, 0];
+    let sineSvg = -(distPosSvg.cy / distSvgCenter);
+    //let sineSvgDegrees = toDegrees(Math.asin(sineSvg));
 
-    console.table({
-        /* mouseRelativeSvg: {x: x, y: y}, */
-        /* currPosScreen: unieOriginScreen, */
-        /* distPos: distPos, */
-        /* dist:dist,
-        distPosSvg: distPosSvg,
-        distSvg: distSvg, */
-        distPosCenterX: distPos.cx,
-        distCenter: distCenter,
-        /* ratio: ratio, */
-        ratioCenter: ratioCenter,
-        /* arcAngleRadian: Math.acos(ratio), */
-        /* arcAngleRadianCenter: Math.acos(ratioCenter),
-        "arcAngleDegreeCenter": toDegrees(Math.acos(ratioCenter)), */
-        cosAngleCenter: Math.cos(ratioCenter),
-        cosAngleDegreeCenter: toDegrees(Math.cos(ratioCenter)),
-    })
+    Unie.lookAtAngle.sin = Math.asin(sineSvg);
+    Unie.lookAtAngle.cos = Math.acos(cosineSvg); 
+
+    Unie.lookAtPosition.x = x;
+    Unie.lookAtPosition.y = y;
+
+    /* console.table({
+        mouseRelativeSvg: {x: x, y: y},
+        distPosSvgX: distPosSvg.cx,
+        distPosSvgY: distPosSvg.cy,
+        distSvgCenter: distSvgCenter,
+        arcCos: Math.acos(cosineSvg),
+        arcSin: Math.asin(sineSvg),  
+        lookAt: {sin: Unie.lookAtAngle.sin, cos: Unie.lookAtAngle.cos, },
+        cosAngleCenter: Math.cos(cosineSvg),
+        sineSvg: Math.sin(sineSvg),
+        
+        sin: toDegrees(Unie.lookAtAngle.sin),
+        cos: toDegrees(Unie.lookAtAngle.cos),
+    }); */
 
 
     
@@ -427,22 +431,6 @@ window.addEventListener("pointermove", (ev)=>{
     setLine(ray, unieOriginSvg.cx, unieOriginSvg.cy, x, unieOriginSvg.cy);
     setLine(rayX, unieOriginSvg.cx, unieOriginSvg.cy, x, y);
     setLine(rayY, unieOriginSvg.cx, unieOriginSvg.cy, unieOriginSvg.cx, y);
-    
-
-    
-
-   /*  let data = {
-        x:x,
-        y:y,
-
-        dist: dist,
-        ratio: distPos.y / dist,
-        degree: degree,
-        "Ângulo real(?)": Math.acos(ratio),
-    }
-    
-    
-    console.table(data); */
 });
 
 
@@ -467,6 +455,9 @@ function setLine(line, x1, y1, x2, y2){
     line.setAttribute('y2', y2);
 }
 
+function toFullCircleAngle(angle){
+    return((angle + 360) % 360);
+}
 
 const keyCode = {
 	BACKSPACE: 8,
@@ -495,27 +486,92 @@ const keyCode = {
 
 
 const Sides = {
+    Right: "right",
+    Up: "up",
     Left: "left",
-    Right: "right"
+    Down: "down",
 }
+
 let previousSide = ""
 
-const interval = setInterval(() => {
-    /* console.log(`Deg: ${Unie.lookAtAngle}`) */
-    //SetBody(UnieBody.head, Atlas.headSide1);
-    if(mouseX < window.innerWidth / 2 && previousSide != Sides.Left){
-        previousSide = Sides.Left;
-        console.log(`left`)
-        if(Unie.lookAtAngle <= 60){
-            //UnieBody.head.el.style = "transform: rotateY(180deg)";
-        }
+
+
+
+window.addEventListener("pointermove", (ev)=>{
+    let dir = ""
+    if(Unie.lookAtAngle.sin > 0 && Unie.lookAtAngle.sin <= Math.PI/2){
+        dir += "Upper"
     }
-    else if(mouseX >= window.innerWidth / 2 && previousSide != Sides.Right){
-        previousSide = Sides.Right;
-        console.log(`right`)
-        if(Unie.lookAtAngle >= 120){
-            //UnieBody.head.el.style = "transform: rotateY(0deg)";
+    else{
+        dir += "Lower"
+    }
+
+    if(Unie.lookAtAngle.cos > 0 && Unie.lookAtAngle.cos < Math.PI/2){
+        dir += " Right"
+    }
+    else{
+        dir += " Left"
+    }
+    console.log(dir)
+
+    
+    let [sin, cos] = [toDegrees(Unie.lookAtAngle.sin), toDegrees(Unie.lookAtAngle.cos)]
+    let lookSide;
+    cos > 90 ? lookSide = 180 : lookSide = 0;
+
+    //Definir qual cabeca usar com rotacao
+    if(cos <= 30 || cos >= 150){
+        SetBody(UnieBody.head, Atlas.headSide2);
+        SetBody(UnieBody.torso, Atlas.torsoSide);
+    }
+    else if ((cos > 30 && cos <= 60) || (cos < 150 && cos >= 120)){
+        SetBody(UnieBody.head, Atlas.headSide1);
+        SetBody(UnieBody.torso, Atlas.torsoSide);
+    }
+    else{
+        SetBody(UnieBody.head, Atlas.headFront);
+        SetBody(UnieBody.torso, Atlas.torsoFront);
+    }
+
+    //Distancia minima para angular cabeca?
+    
+    let dist = Math.sqrt((Unie.lookAtPosition.x - UnieBody.character.el.getBBox().x) * (Unie.lookAtPosition.x - UnieBody.character.el.getBBox().x) + (Unie.lookAtPosition.y - UnieBody.character.el.getBBox().y) * (Unie.lookAtPosition.y - UnieBody.character.el.getBBox().y))
+    console.log("distance", dist, Unie.lookAtPosition.x, UnieBody.character.el.getBBox().x, UnieBody.character.el.getBBox().width)
+    if(dist > 130){
+        console.log("Safe distance");
+
+
+        if(cos > 90){
+            lookSide = 180;
+            UnieBody.head.el.style = `transform: rotateZ(${sin}deg) rotateY(${lookSide}deg)`
+            //UnieBody.head.el.style = `transform: rotateY(${lookSide}deg)`
+        }
+        else{
+            lookSide = 0;
+            UnieBody.head.el.style = `transform: rotateZ(${-sin}deg) rotateY(${lookSide}deg)`
+            /* UnieBody.head.el.style = `transform:  rotateY(${lookSide}deg)` */
         }
         
+        UnieBody.torso.el.style = `transform: rotateY(${lookSide}deg)`
+
     }
-}, 100);
+    else{
+        SetBody(UnieBody.head, Atlas.headFront);
+        SetBody(UnieBody.torso, Atlas.torsoFront);
+        UnieBody.head.el.style = `transform: rotateZ(0deg) rotateY(0deg)`
+    }
+    
+    
+    
+    /* if(sin <= 45){
+    }
+    else if(sin >= 135){
+        SetBody(UnieBody.head, Atlas.headSide1);
+        UnieBody.head.el.style = `transform: rotateZ(${180 - sin}deg) rotateY(${lookSide}deg)`
+    } */
+})
+
+
+/* const interval = setInterval(() => {
+    
+}, 100); */

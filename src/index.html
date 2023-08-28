@@ -75,16 +75,25 @@
         }
 
         /* Unie */
-        #Unie__Character, #Unie__Character *, #UniePose__Character, #UniePose__Character * {
+        /* #Unie__Character, #Unie__Character *, #UniePose__Character, #UniePose__Character *, #Sprite_Atlas *{
             transform-box: fill-box;
-        }
+        }    */
 
         #Unie__Arm_L, #Unie__Arm_R{
-            transform-origin: center top ;
+            transform-origin: center top;
             transition: transform 1s;
         }
-        #Unie__Head, #Unie__Head_Side1 {
+        #Unie__Head, #Unie__Head_Side1, #Unie__Head_Side2, #UniePose__Head, #Unie{
+            z-index: 1;
+        }
+
+        .transform{
+            position: absolute; /* Espero que não tenha efeitos colaterais nos cálculos */
+            transform-box: fill-box;
             transform-origin: center center;
+        }
+        .transform__origin--upper-center{
+            transform-origin: center top;
         }
     </style>
 </head>
