@@ -1,7 +1,0 @@
-- settar origem rotacao cabeca no centro de sua cabeca (e nao no character);
-- corrigir translacao e escala do SVG para calculos de distancia funcionar
-  - levar em conta:
-    - translacao inline
-    - X, Y, scale X, scale Y SVG
-- Fazer comportamento cabeça ir pra frente e voltar com cursor
-- Corrigir cabeca atras de torso. Usar "insertBefore" no torso;

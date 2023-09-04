@@ -121,8 +121,20 @@ rayY.setAttribute('id','rayY');
 rayY.setAttribute("stroke", "green")
 rayY.setAttribute("stroke-width", "2px")
 
+const deadMouseFollowDistance = 90;
+let circleDeadThreshold = document.createElementNS('http://www.w3.org/2000/svg','circle');
+circleDeadThreshold.setAttribute("style", "fill: #99009966; stroke-width: 1px; stroke: black")
+
+const minMouseFollowDistance = 175;
+let circleMinThreshold = document.createElementNS('http://www.w3.org/2000/svg','circle');
+circleMinThreshold.setAttribute("style", "fill: #dd00dd66; stroke-width: 1px; stroke: black")
+
+const maxMouseFollowDistance = 400;
+let circleMaxThreshold = document.createElementNS('http://www.w3.org/2000/svg','circle');
+circleMaxThreshold.setAttribute("style", "fill: #caca0066; stroke-width: 1px; stroke: black")
+
 let mouseX, mouseY;
-let unieRects, unieBb;
+let unieElRects, unieBb;
 
 
 const load = async () => {
@@ -142,9 +154,8 @@ const load = async () => {
 				svg.setAttribute("style", "background-color: #0f0f0f9d");
                 svg.classList.add("mySvg")
 
-                svg.append(ray);
-                svg.append(rayX);
-                svg.append(rayY);
+                svg.append(ray, rayX, rayY);
+                svg.append(circleMaxThreshold, circleMinThreshold, circleDeadThreshold);
 
 				/* svg.setAttribute("viewBox", "0 0 6000 6000"); */
                 
@@ -173,7 +184,14 @@ const load = async () => {
                 UnieBody.Eyes.el= Atlas.eyes.el;  
                 UnieBody.Eyes.name = Atlas.eyes.name;                
 
-                UpdateViewboxData();				
+                //Load init prop data unie
+                for (const [k, v] of Object.entries(UnieBody)) {
+                    UnieBody[k].originalBoundClientRect = v.el.getBoundingClientRect();
+                }
+
+                UpdateViewboxData();	
+
+                drawCharacterBones();
 			});
 		});
 };
@@ -230,8 +248,8 @@ document.body.addEventListener("keydown", (ev) => {
 	//Animations/taunts
 	switch (ev.key) {
 		case "z":
-			UnieBody.armL.classList.toggle("rotateL");
-			UnieBody.armR.classList.toggle("rotateR");
+			UnieBody.armL.el.classList.toggle("rotateL");
+			UnieBody.armR.el.classList.toggle("rotateR");
 
 			UnieBody.armL.addEventListener("animationend", (ev) => {
 				console.log("finished");
@@ -274,15 +292,20 @@ function SetBody(part, newPart) {
         if(v.name == part.name){
             /* console.log("found"); */
             atlas.appendChild(part.el);
-            UnieBody.character.el.appendChild(newPart.el);
+
+            //Head Always infront of Torso
+            if(v.name == Atlas.torsoFront.name || v.name == Atlas.torsoSide.name){
+                UnieBody.character.el.insertBefore(newPart.el, UnieBody.head.el);
+            }
+            else{
+                UnieBody.character.el.appendChild(newPart.el);
+            }
+            
 
             part.el.style.display = "none"; 
 	        newPart.el.style.display = "";
 
             UnieBody[k] = newPart;
-            /* console.log(UnieBody);
-            console.log(UnieBody[k]); */
-
             return;
         }
     }
@@ -299,11 +322,11 @@ function move(newPos = [0, 0], offset = [0,0]){
 
     //We are dealing with SVG space. Screen --to-> SVG needed
     //Already in svg space
-    [unieRects, unieBb] = [UnieBody.character.el.getBoundingClientRect(), UnieBody.character.el.getBBox()];
+    [unieElRects, unieBb] = [UnieBody.character.el.getBoundingClientRect(), UnieBody.character.el.getBBox()];
 
     let currPos = {
-        x: unieRects.x + svgX,
-        y: unieRects.y + svgY
+        x: unieElRects.x + svgX,
+        y: unieElRects.y + svgY
     };
 
     // Svg / Screen = rate ratio
@@ -315,7 +338,7 @@ function move(newPos = [0, 0], offset = [0,0]){
     
     console.log("Curr", currPos.x, currPos.y)
     console.log("new:", newX, newY)
-    console.log("rects", unieRects.x, unieRects.y)
+    console.log("rects", unieElRects.x, unieElRects.y)
     console.log("bbox", unieBb.x, unieBb.y)
 
 
@@ -340,7 +363,7 @@ function move(newPos = [0, 0], offset = [0,0]){
 
     
     moveUnieAnimation.addEventListener("finish", (ev)=>{
-        console.log("rects", unieRects.x, unieRects.y)
+        console.log("rects", unieElRects.x, unieElRects.y)
         console.log("bbox", unieBb.x, unieBb.y)
     });
 
@@ -354,36 +377,36 @@ window.addEventListener("pointermove", (ev)=>{
     [mouseX, mouseY] = [ev.clientX, ev.clientY];
     let bbox = UnieBody.head.el.getBBox();
 
-    [unieRects, unieBb] = [UnieBody.character.el.getBoundingClientRect(), UnieBody.character.el.getBBox()];
+    [unieElRects, unieBb] = [UnieBody.head.el.getBoundingClientRect(), UnieBody.character.el.getBBox()];
 
     let unieOriginScreen = {
-        x: unieRects.x,
-        y: unieRects.y,
-        cx: unieRects.x + unieRects.width/2,
-        cy: unieRects.y + unieRects.height/2,
+        x: unieElRects.x,
+        y: unieElRects.y,
+        cx: unieElRects.x + unieElRects.width/2,
+        cy: unieElRects.y + unieElRects.height/2,
     };
 
     let unieOriginSvg = {
-        x: unieRects.x + svgX,
-        y: unieRects.y + svgY,
-        cx: (unieRects.x + svgX) + unieRects.width/2,
-        cy: (unieRects.y + svgY) + unieRects.height/2,
+        x: unieElRects.x + svgX,
+        y: unieElRects.y + svgY,
+        cx: (unieElRects.x + svgX) + unieElRects.width/2,
+        cy: (unieElRects.y + svgY) + unieElRects.height/2,
     };
 
-    let [x, y] = [mouseX - unieRects.x, mouseY - unieRects.y];
+    let [newMouseX, newMouseY] = [(mouseX - unieElRects.x), (mouseY - unieElRects.y)];
     
     let distPos = {
-        x: x - unieOriginScreen.x,
-        y: y - unieOriginScreen.y,
-        cx: x - unieOriginScreen.cx,
-        cy: y - unieOriginScreen.cy
+        x: newMouseX - unieOriginScreen.x,
+        y: newMouseY - unieOriginScreen.y,
+        cx: newMouseX - unieOriginScreen.cx,
+        cy: newMouseY - unieOriginScreen.cy
     }
 
     let distPosSvg = {
-        x: x - unieOriginSvg.x,
-        y: y - unieOriginSvg.y,
-        cx: x - unieOriginSvg.cx,
-        cy: y - unieOriginSvg.cy,
+        x: newMouseX - unieOriginSvg.x,
+        y: newMouseY - unieOriginSvg.y,
+        cx: newMouseX - unieOriginSvg.cx,
+        cy: newMouseY - unieOriginSvg.cy,
     }
 
     let dist = Math.sqrt((distPos.x * distPos.x) + (distPos.y * distPos.y));
@@ -402,25 +425,8 @@ window.addEventListener("pointermove", (ev)=>{
     Unie.lookAtAngle.sin = Math.asin(sineSvg);
     Unie.lookAtAngle.cos = Math.acos(cosineSvg); 
 
-    Unie.lookAtPosition.x = x;
-    Unie.lookAtPosition.y = y;
-
-    /* console.table({
-        mouseRelativeSvg: {x: x, y: y},
-        distPosSvgX: distPosSvg.cx,
-        distPosSvgY: distPosSvg.cy,
-        distSvgCenter: distSvgCenter,
-        arcCos: Math.acos(cosineSvg),
-        arcSin: Math.asin(sineSvg),  
-        lookAt: {sin: Unie.lookAtAngle.sin, cos: Unie.lookAtAngle.cos, },
-        cosAngleCenter: Math.cos(cosineSvg),
-        sineSvg: Math.sin(sineSvg),
-        
-        sin: toDegrees(Unie.lookAtAngle.sin),
-        cos: toDegrees(Unie.lookAtAngle.cos),
-    }); */
-
-
+    Unie.lookAtPosition.x = newMouseX;
+    Unie.lookAtPosition.y = newMouseY;
     
     /*Unie top left*/
     /* setLine(ray, unieOriginSvg.x, unieOriginSvg.y, x, y);
@@ -428,12 +434,50 @@ window.addEventListener("pointermove", (ev)=>{
     setLine(rayY, unieOriginSvg.x, unieOriginSvg.y, unieOriginSvg.x, y); */
     
     /* Unie center */
-    setLine(ray, unieOriginSvg.cx, unieOriginSvg.cy, x, unieOriginSvg.cy);
-    setLine(rayX, unieOriginSvg.cx, unieOriginSvg.cy, x, y);
-    setLine(rayY, unieOriginSvg.cx, unieOriginSvg.cy, unieOriginSvg.cx, y);
+    setLine(ray, getSvgObjectCoordinates(UnieBody.head.el).cx, getSvgObjectCoordinates(UnieBody.head.el).cy, newMouseX, newMouseY);
+    setLine(rayX, getSvgObjectCoordinates(UnieBody.head.el).cx, getSvgObjectCoordinates(UnieBody.head.el).cy, newMouseX, getSvgObjectCoordinates(UnieBody.head.el).cy);
+    setLine(rayY, getSvgObjectCoordinates(UnieBody.head.el).cx, getSvgObjectCoordinates(UnieBody.head.el).cy, getSvgObjectCoordinates(UnieBody.head.el).cx, newMouseY);
+
+    setCircle(circleMaxThreshold, getSvgObjectCoordinates(UnieBody.head.el).cx, getSvgObjectCoordinates(UnieBody.head.el).cy, maxMouseFollowDistance);
+    setCircle(circleMinThreshold, getSvgObjectCoordinates(UnieBody.head.el).cx, getSvgObjectCoordinates(UnieBody.head.el).cy, minMouseFollowDistance);
+    setCircle(circleDeadThreshold, getSvgObjectCoordinates(UnieBody.head.el).cx, getSvgObjectCoordinates(UnieBody.head.el).cy, deadMouseFollowDistance);
+
 });
 
 
+
+/**
+ * @typedef {Object} SvgCoordinateAdjusted
+ * @param {Number} x 
+ * @param {Number} y 
+ * @param {Number} cx 
+ * @param {Number} cy 
+ */
+
+/**
+ * 
+ * @param {SVGElement} svgId 
+ * @returns {SvgCoordinateAdjusted} Adjusted Coordinates 
+ */
+function getSvgObjectCoordinates(svgId){
+    let svgObj;
+    if(typeof svgId == "object"){
+        svgObj = svgId;
+    }
+    else if(typeof svgId == "string"){
+        svgObj = document.getElementById(svgId);
+    }
+
+    let rects = svgObj.getBoundingClientRect();
+
+    let coordinateObj = {
+        x: rects.x + svgX,
+        y: rects.y + svgY,
+        cx: (rects.x + svgX) + rects.width / 2,
+        cy: (rects.y + svgY) + rects.height / 2,
+    }
+    return coordinateObj;
+}
 
 function toDegrees(radian){
     return radian * (180/ Math.PI)
@@ -455,8 +499,32 @@ function setLine(line, x1, y1, x2, y2){
     line.setAttribute('y2', y2);
 }
 
+function setCircle(circle, cx, cy, r){
+    circle.setAttribute('cx', cx);
+    circle.setAttribute('cy', cy);
+    circle.setAttribute('r', r);    
+}
+
 function toFullCircleAngle(angle){
     return((angle + 360) % 360);
+}
+
+let boneList = [];
+function drawCharacterBones(){
+    for (let [k, prop] of Object.entries(UnieBody)) {
+
+        let bone = {
+            el: document.createElementNS("http://www.w3.org/2000/svg", "circle"),
+            originalComputed: getComputedStyle(prop.el),
+        } 
+        bone.el.style = "fill: black;"
+        bone.el.setAttribute("cx", prop.el.getBoundingClientRect().x + prop.el.getBoundingClientRect().width / 2);
+        bone.el.setAttribute("cy", prop.el.getBoundingClientRect().y + prop.el.getBoundingClientRect().height / 2);
+        bone.el.setAttribute("r", "3");
+
+        boneList.push(bone);
+        svg.append(bone.el);
+    }
 }
 
 const keyCode = {
@@ -491,11 +559,8 @@ const Sides = {
     Left: "left",
     Down: "down",
 }
-
 let previousSide = ""
-
-
-
+let lookSide;
 
 window.addEventListener("pointermove", (ev)=>{
     let dir = ""
@@ -516,15 +581,15 @@ window.addEventListener("pointermove", (ev)=>{
 
     
     let [sin, cos] = [toDegrees(Unie.lookAtAngle.sin), toDegrees(Unie.lookAtAngle.cos)]
-    let lookSide;
-    cos > 90 ? lookSide = 180 : lookSide = 0;
+    
+    lookSide = cos > 90 ? 180 : 0;
 
     //Definir qual cabeca usar com rotacao
-    if(cos <= 30 || cos >= 150){
+    if(cos <= 20 || cos >= 160){
         SetBody(UnieBody.head, Atlas.headSide2);
         SetBody(UnieBody.torso, Atlas.torsoSide);
     }
-    else if ((cos > 30 && cos <= 60) || (cos < 150 && cos >= 120)){
+    else if ((cos > 20 && cos <= 60) || (cos < 160 && cos >= 120)){
         SetBody(UnieBody.head, Atlas.headSide1);
         SetBody(UnieBody.torso, Atlas.torsoSide);
     }
@@ -534,13 +599,35 @@ window.addEventListener("pointermove", (ev)=>{
     }
 
     //Distancia minima para angular cabeca?
+    let [computedTranslateHeadX, computedTranslateHeadY] = [parseFloat(getComputedStyle(UnieBody.head.el).translate.split(" ")[0]), parseFloat(getComputedStyle(UnieBody.head.el).translate.split(" ")[1])];
+    if(typeof computedTranslateHeadX != "number"){
+        computedTranslateHeadX = 0;
+    }
+
+    if(typeof computedTranslateHeadY != "number"){
+        computedTranslateHeadX = 0;
+    }
+
+    let [headCx, headCy] = [(UnieBody.head.el.getBoundingClientRect().x + UnieBody.head.el.getBoundingClientRect().width/2) - computedTranslateHeadX, (UnieBody.head.el.getBoundingClientRect().y + UnieBody.head.el.getBoundingClientRect().height/2) - computedTranslateHeadY]
+    let [distX, distY] = [Unie.lookAtPosition.x - headCx, Unie.lookAtPosition.y - headCy];
     
-    let dist = Math.sqrt((Unie.lookAtPosition.x - UnieBody.character.el.getBBox().x) * (Unie.lookAtPosition.x - UnieBody.character.el.getBBox().x) + (Unie.lookAtPosition.y - UnieBody.character.el.getBBox().y) * (Unie.lookAtPosition.y - UnieBody.character.el.getBBox().y))
-    console.log("distance", dist, Unie.lookAtPosition.x, UnieBody.character.el.getBBox().x, UnieBody.character.el.getBBox().width)
-    if(dist > 130){
-        console.log("Safe distance");
+    let dist = Math.sqrt(distX * distX + distY * distY);
 
-
+    let data = {
+        mouseX: mouseX,
+        mouseY: mouseY,
+        headCx: headCx,
+        headCy: headCy,
+        distX: distX,
+        distY: distY,
+        dist: dist,
+        computedTranslateHeadX: computedTranslateHeadX,
+        computedTranslateHeadY: computedTranslateHeadY,
+        test1: typeof computedTranslateHeadX,
+        test2: typeof computedTranslateHeadY
+    }
+    console.table(data)
+    if(dist >= deadMouseFollowDistance){
         if(cos > 90){
             lookSide = 180;
             UnieBody.head.el.style = `transform: rotateZ(${sin}deg) rotateY(${lookSide}deg)`
@@ -553,15 +640,23 @@ window.addEventListener("pointermove", (ev)=>{
         }
         
         UnieBody.torso.el.style = `transform: rotateY(${lookSide}deg)`
-
+        
+        if(dist > minMouseFollowDistance){
+            //console.log("Safe distance");
+            UnieBody.head.el.style.translate = `${(distX+headCx)/10}px ${(distY+headCy)/10}px`
+        }
+        else{
+            UnieBody.head.el.style.translate = `${-(distX+headCx)/10}px ${-(distY+headCy)/10}px`
+        }
     }
+    
     else{
         SetBody(UnieBody.head, Atlas.headFront);
         SetBody(UnieBody.torso, Atlas.torsoFront);
         UnieBody.head.el.style = `transform: rotateZ(0deg) rotateY(0deg)`
     }
     
-    
+
     
     /* if(sin <= 45){
     }
@@ -570,8 +665,3 @@ window.addEventListener("pointermove", (ev)=>{
         UnieBody.head.el.style = `transform: rotateZ(${180 - sin}deg) rotateY(${lookSide}deg)`
     } */
 })
-
-
-/* const interval = setInterval(() => {
-    
-}, 100); */
