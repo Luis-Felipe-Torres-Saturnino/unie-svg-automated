@@ -1,4 +1,4 @@
-//use strict
+'use strict';
 
 /** @type {HTMLElement} */
 let _svg = document.getElementById("svg");

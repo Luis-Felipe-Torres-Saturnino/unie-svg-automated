@@ -16,8 +16,6 @@
  * God help you trying to adequately animate the body with head as reference (IK principles?)
 */
 
-requestAnimationFrame()
-
 let UnieBody = {
     character: {
         name: "",
@@ -129,6 +127,7 @@ let Unie = {
         y: 0,
     },
     forceHeadFrontOnLowAngle: true,
+    isMouseFollow: true,
 }
 
 let armatureFixed = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -159,7 +158,9 @@ let mouseSvgX, mouseSvgY;
 let unieOriginRect, unieOriginRectFixed, unieBb;
 let unieOriginSvg, unieOriginSvgFixed;
 
-
+/**
+ * Load SVG into page
+ */
 const load = async () => {
 	await fetch("./Unie Sprite Atlas.svg")
 	//await fetch("./unieFix.svg")
@@ -280,15 +281,16 @@ document.body.addEventListener("keydown", (ev) => {
 			UnieBody.armL.el.classList.toggle("rotateL");
 			UnieBody.armR.el.classList.toggle("rotateR");
 
-			UnieBody.armL.addEventListener("animationend", (ev) => {
+			UnieBody.armL.el.addEventListener("animationend", (ev) => {
 				console.log("finished");
 			});
 
-			UnieBody.armR.addEventListener("animationend", (ev) => {
+			UnieBody.armR.el.addEventListener("animationend", (ev) => {
 				console.log("finished");
 			});
 			break;
 		case "x":
+            Unie.isMouseFollow = !Unie.isMouseFollow;
 			break;
 		case "c":
 			break;
@@ -406,21 +408,19 @@ window.addEventListener("pointermove", (ev)=>{
         SetBody(UnieBody.head, Atlas.headFront);
         SetBody(UnieBody.torso, Atlas.torsoFront);
     }
-    console.log(cosDeg)
 
-
-    
     //Angular cabeça
     //Distancia minima para angular cabeca?
-    let [headCxAdapted, headCyAdapted] = [unieOriginSvgFixed.cx, unieOriginSvgFixed.cy]
-    let [distX, distY] = [Unie.lookAtPosition.x - headCxAdapted, Unie.lookAtPosition.y - headCyAdapted];
+    let [headFixedCxAdapted, headFixedCyAdapted] = [unieOriginSvgFixed.cx, unieOriginSvgFixed.cy]
+    let [headCxAdapted, headCyAdapted] = [UnieBody.head.el.getBoundingClientRect().left - UnieBody.head.el.getBoundingClientRect().width/2, UnieBody.head.el.getBoundingClientRect().top - UnieBody.head.el.getBoundingClientRect().height/2]
+    let [distX, distY] = [Unie.lookAtPosition.x - headFixedCxAdapted, Unie.lookAtPosition.y - headFixedCyAdapted];
     
     let dist = Math.sqrt(distX * distX + distY * distY);
 
     //Arbitrario
     const coeficient = {
-        x: 8,
-        y: 8,
+        x: 1,
+        y: 1,
     };
 
     //Rotacionar cabeça em distância minima
@@ -453,34 +453,95 @@ window.addEventListener("pointermove", (ev)=>{
     
     /**@todo ROTATE HEAD BASED ON MOUSE POSITION*/
 
-/* 
-    let translate = {
+
+/*     let translate = {
         x: (distX + headCxAdapted) - minMouseFollowDistance,
         y: (distY + headCyAdapted) - minMouseFollowDistance,
+    } */
+    let translate = {
+        x: (headFixedCxAdapted + distX) - UnieBody.head.el.getBoundingClientRect().width/2,
+        y: (headFixedCyAdapted + distY) - UnieBody.head.el.getBoundingClientRect().height/2
     }
 
-    if(dist < deadMouseFollowDistance){
-        SetBody(UnieBody.head, Atlas.headFront);
-        SetBody(UnieBody.torso, Atlas.torsoFront);
+    if(Unie.isMouseFollow){
+        let finalTranslate = {
+            x: 0,
+            y: 0
+        };
+
+        if(dist < deadMouseFollowDistance){
+            console.log("Dead distance")
+            finalTranslate.x = translate.x/-coeficient.x
+            finalTranslate.y = translate.y/-coeficient.y
+        }
+        else if(dist < minMouseFollowDistance){
+            console.log("Follow up distance")
+            
+            let originAdapted = [distX/minMouseFollowDistance * 2, distY/minMouseFollowDistance * 2];
+            let coeficientAdapted = [(-coeficient.x + originAdapted[0]), (-coeficient.y + originAdapted[1])]
+            
+            if(originAdapted[0] < 0){
+                coeficientAdapted[0] = -(-coeficient.x + originAdapted[0]) 
+            }
+
+            if(originAdapted[1] < 0){
+                coeficientAdapted[1] = -(-coeficient.y - originAdapted[1])
+            }
+
+            let translateAdapted = [(translate.x - minMouseFollowDistance) + (translate.x * coeficientAdapted[0]),
+                                 (translate.y - minMouseFollowDistance) + (translate.y * coeficientAdapted[1])]
+
+            if(originAdapted[0] < 0){
+                translateAdapted[0] = -(translate.x - minMouseFollowDistance) + (translate.x * coeficientAdapted[0])
+            }
+
+            if(originAdapted[1] < 0){
+                translateAdapted[1] = -(translate.y + minMouseFollowDistance) - (translate.y * coeficientAdapted[1])
+            }
+
+            console.table({
+                minmouse: deadMouseFollowDistance,
+                maxMouse: minMouseFollowDistance,
+                transX: distX/minMouseFollowDistance,
+                transXAdapted: originAdapted,
+                AbstransXAdapted: Math.abs(originAdapted[0]),
+                newCoefic: coeficientAdapted,
+                translateAdapted: translateAdapted
+            })
+           
+            finalTranslate.x = translate.x/(coeficient.x);
+            finalTranslate.y = translateAdapted[1]/(coeficient.y);
+           
+            //We defaulting it
+            /* finalTranslate.x = translate.x/coeficient.x
+            finalTranslate.y = translate.y/coeficient.y */
+
+        }
+        else if(dist <= maxMouseFollowDistance){
+            console.log("Safe Distance")
+            finalTranslate.x = translate.x/coeficient.x
+            finalTranslate.y = translate.y/coeficient.y
+        }
+        else if(dist > maxMouseFollowDistance){
+            //Clamp X and Y
+            console.log("X Y - Over the limit");
+            finalTranslate.x = maxMouseFollowDistance*cosineSvgFixed/coeficient.x
+            finalTranslate.y = -(maxMouseFollowDistance*sineSvgFixed/coeficient.y)
+        }
+
+        UnieBody.head.el.style.translate = `${finalTranslate.x}px ${finalTranslate.y}px`
     }
-    else if(dist < minMouseFollowDistance){
-        UnieBody.head.el.style.translate = `${translate.x/coeficient.x}px ${translate.y/coeficient.y}px`
-    }
-    else if(dist <= maxMouseFollowDistance){
-        console.log("SafeDistance")
-        UnieBody.head.el.style.translate = `${translate.x/coeficient.x}px ${translate.y/coeficient.y}px`
-    }
-    else if(dist > maxMouseFollowDistance){
-        console.log("Over the limit");
-        UnieBody.head.el.style.translate = `${maxMouseFollowDistance*cosineSvg/coeficient.x}px ${-(maxMouseFollowDistance*sineSvg/coeficient.y)}px`
-    }
-     */
-/* 
-    let data = {
+
+    
+
+    /* let data = {
         maxMouseFollowDistance: maxMouseFollowDistance,
         distX: distX,
         distY:distY,
         dist: dist,
+        sineSvgFixed: sineSvgFixed,
+        cosineSvgFixed: cosineSvgFixed,
+        translate: translate
     }
     console.table(data); */
 
@@ -760,3 +821,8 @@ const Sides = {
 }
 let previousSide = ""
 let lookSide;
+
+
+function lerp(a, b, t){
+    return a + (b - a) * t;
+}
