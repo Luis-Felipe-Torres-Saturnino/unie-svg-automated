@@ -14,6 +14,17 @@
  * Study use case of SVG 'Symbol' and '<use>'. Performance may degrade, but help designers profoundly
  * Create a better mapper and an interface for UnieBody and Atlas. It just sucks to hardcode
  * God help you trying to adequately animate the body with head as reference (IK principles?)
+ * 
+ * @TodoImportant
+ * -Interromper cabeça translate.
+ * -Criar Lib visual para debug
+ * -Criar layers para debug visual
+ * -Melhorar ciclo de atualizaçao visual e do unie
+ * -Substituir mover cabeça para usar "estados";
+ * -Atualizar matemática e usar biblioteca Vector2
+ * -(opt) Experimentar lib Vector2 usar HOF
+ *  
+ * 
 */
 
 let UnieBody = {
@@ -128,6 +139,8 @@ let Unie = {
     },
     forceHeadFrontOnLowAngle: true,
     isMouseFollow: true,
+    
+    body: UnieBody,
 }
 
 let armatureFixed = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -418,7 +431,7 @@ window.addEventListener("pointermove", (ev)=>{
     let dist = Math.sqrt(distX * distX + distY * distY);
 
     //Arbitrario
-    const coeficient = {
+    const headFollowMouseCoeficient = {
         x: 1,
         y: 1,
     };
@@ -471,21 +484,21 @@ window.addEventListener("pointermove", (ev)=>{
 
         if(dist < deadMouseFollowDistance){
             console.log("Dead distance")
-            finalTranslate.x = translate.x/-coeficient.x
-            finalTranslate.y = translate.y/-coeficient.y
+            finalTranslate.x = translate.x/-headFollowMouseCoeficient.x
+            finalTranslate.y = translate.y/-headFollowMouseCoeficient.y
         }
         else if(dist < minMouseFollowDistance){
             console.log("Follow up distance")
             
             let originAdapted = [distX/minMouseFollowDistance * 2, distY/minMouseFollowDistance * 2];
-            let coeficientAdapted = [(-coeficient.x + originAdapted[0]), (-coeficient.y + originAdapted[1])]
+            let coeficientAdapted = [(-headFollowMouseCoeficient.x + originAdapted[0]), (-headFollowMouseCoeficient.y + originAdapted[1])]
             
             if(originAdapted[0] < 0){
-                coeficientAdapted[0] = -(-coeficient.x + originAdapted[0]) 
+                coeficientAdapted[0] = -(-headFollowMouseCoeficient.x + originAdapted[0]) 
             }
 
             if(originAdapted[1] < 0){
-                coeficientAdapted[1] = -(-coeficient.y - originAdapted[1])
+                coeficientAdapted[1] = (-headFollowMouseCoeficient.y - originAdapted[1])
             }
 
             let translateAdapted = [(translate.x - minMouseFollowDistance) + (translate.x * coeficientAdapted[0]),
@@ -496,7 +509,7 @@ window.addEventListener("pointermove", (ev)=>{
             }
 
             if(originAdapted[1] < 0){
-                translateAdapted[1] = -(translate.y + minMouseFollowDistance) - (translate.y * coeficientAdapted[1])
+                translateAdapted[1] = -(translate.y + minMouseFollowDistance) + (translate.y * coeficientAdapted[1])
             }
 
             console.table({
@@ -509,8 +522,8 @@ window.addEventListener("pointermove", (ev)=>{
                 translateAdapted: translateAdapted
             })
            
-            finalTranslate.x = translate.x/(coeficient.x);
-            finalTranslate.y = translateAdapted[1]/(coeficient.y);
+            finalTranslate.x = translate.x/(headFollowMouseCoeficient.x);
+            finalTranslate.y = translateAdapted[1]/(headFollowMouseCoeficient.y);
            
             //We defaulting it
             /* finalTranslate.x = translate.x/coeficient.x
@@ -519,14 +532,14 @@ window.addEventListener("pointermove", (ev)=>{
         }
         else if(dist <= maxMouseFollowDistance){
             console.log("Safe Distance")
-            finalTranslate.x = translate.x/coeficient.x
-            finalTranslate.y = translate.y/coeficient.y
+            finalTranslate.x = translate.x/headFollowMouseCoeficient.x
+            finalTranslate.y = translate.y/headFollowMouseCoeficient.y
         }
         else if(dist > maxMouseFollowDistance){
             //Clamp X and Y
             console.log("X Y - Over the limit");
-            finalTranslate.x = maxMouseFollowDistance*cosineSvgFixed/coeficient.x
-            finalTranslate.y = -(maxMouseFollowDistance*sineSvgFixed/coeficient.y)
+            finalTranslate.x = maxMouseFollowDistance*cosineSvgFixed/headFollowMouseCoeficient.x
+            finalTranslate.y = -(maxMouseFollowDistance*sineSvgFixed/headFollowMouseCoeficient.y)
         }
 
         UnieBody.head.el.style.translate = `${finalTranslate.x}px ${finalTranslate.y}px`
@@ -697,7 +710,7 @@ function move(newPos = [0, 0], offset = [0,0]){
 
 
     /** @type {Animation} */
-    let moveUnieAnimation;
+    let moveUnieAnimation;k
 
     let moveKeyframes = new KeyframeEffect(UnieBody.character.el, [
         
@@ -823,6 +836,33 @@ let previousSide = ""
 let lookSide;
 
 
+
+/**
+ * @typedef Skeleton
+ * @property {Bone} rootBone
+ * @property {String} Label
+*/
+
+/**
+ * @typedef Bone
+ * @property {Array<Bone>} childBones children bones associated with this bone
+ * @property {String} label
+*/
+
+/**
+ * @typedef BodyPart
+ * @property {String} label 
+ * @property {SVGElement} element
+ */
+
+/**
+ * Calculate a number linearly proportional to a starting nubmer and ending number. 
+ * The parametric value represents the "progress" ratio, normally between [0, 1]. Other values can also be stated
+ * @param {Number} a Starting Point 
+ * @param {Number} b Ending point
+ * @param {Number} t Parameter. Usually between [0, 1]
+ * @returns {Number}
+ */
 function lerp(a, b, t){
     return a + (b - a) * t;
 }
