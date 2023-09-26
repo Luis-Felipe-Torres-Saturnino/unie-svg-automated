@@ -74,19 +74,6 @@
             
         }
 
-        /* Unie */
-        /* #Unie__Character, #Unie__Character *, #UniePose__Character, #UniePose__Character *, #Sprite_Atlas *{
-            transform-box: fill-box;
-        }    */
-
-        #UniePose__Arm_L, #UniePose__Arm_R{
-            transform-origin: center top;
-            transition: transform 1s;
-        }
-        #Unie__Head, #Unie__Head_Side1, #Unie__Head_Side2, #UniePose__Head, #Unie{
-            z-index: 1;
-        }
-
         .transform{
             position: absolute; /* Espero que não tenha efeitos colaterais nos cálculos */
             transform-box: fill-box;
@@ -94,6 +81,7 @@
         }
         .transform__origin--upper-center{
             transform-origin: center top;
+            transition: all 1s;
         }
     </style>
 </head>
