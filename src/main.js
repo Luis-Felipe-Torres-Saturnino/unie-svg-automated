@@ -57,59 +57,59 @@
  * @enum {String}
  */
 const BodyCategories = {
-    character,
-    head,
-    torso,
-    armL,
-    armR,
-    eyes,
-    eyeLeft,
-    eyeRight,
+    character: 0,
+    head: 1,
+    torso: 2,
+    armL: 3,
+    armR: 4,
+    eyes:5 ,
+    eyeLeft: 6,
+    eyeRight: 7,
 }
 
 
-let UnieBody = [
-    {
+let UnieBody = {
+    character: {
         name: "",
         el: null,
         category: BodyCategories.character,
     },
-    {
+    head: {
         name: "",
         el: null,
         category: BodyCategories.head,
     },
-    {
+    torso: {
         name: "",
         el: null,
         category: BodyCategories.torso,
     },
-	{
+	armL:{
         name: "",
         el: null,
         category: BodyCategories.armL,
     },
-	{
+	armR:{
         name: "",
         el: null,
         category: BodyCategories.armR,
     },
-    {
+    eyes:{
         name: "",
         el: null,
         category: BodyCategories.eyes,
     },
-    {
+    eyeLeft:{
         name: "",
         el: null,
         category: BodyCategories.eyeLeft,
     },
-    {
+    eyeRight:{
         name: "",
         el: null,
         category: BodyCategories.eyeRight,
     },
-];
+};
 
 let Atlas = {
     /**@type {Array<BodyPart>} */
