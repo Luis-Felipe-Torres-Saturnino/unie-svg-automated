@@ -1,5 +1,8 @@
 /**
+ * Instancia um vetor de duas posições. Útil para gerenciar álgebra linear e operações comuns de vetores.
  * 
+ * Métodos estáticos retornam NOVOS Vetores. 
+ * Métodos normais 
  * @description Classe para manipular vetores de duas dimensões.
  * @class 
  */
@@ -226,3 +229,75 @@ export class Vector3{
         return [x, y]
     };
 }
+
+
+
+
+
+
+/*
+public class Main
+{
+    public static void main(String[] args) {
+        System.out.println(Main.Distance(3, 4));
+        System.out.println(Main.Distance(3, 4, 6));
+    }
+    
+    ///Calculates the distance given two sides using pythagorean theorem
+    public static double Distance(double x, double y){
+        return Math.sqrt(x*x + y*y);
+    }
+    
+    ///Calculates the distance given two sides using pythagorean theorem
+    public static double Distance(double x, double y, double z){
+        return Math.sqrt(x*x + y*y + z*z);
+    }
+    
+    ///Returns something odd
+    public static double Distance(double x){
+        return 123.45;
+    }
+}
+
+
+
+*/
+
+
+function distance(x, y, z){
+    if(!z){
+        return Math.sqrt(x*x + y*y);
+    }
+    else{
+        return Math.sqrt(x*x + y*y + z*z);
+    }
+}
+
+/*
+
+function distance(x, y, z){
+    if(!z){
+        return Math.sqrt(x*x + y*y);
+    }
+    else{
+        return Math.sqrt(x*x + y*y + z*z);
+    }
+}
+
+function distance(x, y, z){
+    if(Array.isArray(x)){
+        return Math.sqrt(x[0]*x[0] + x[1]*x[1]);
+    }
+    else if(!z){
+        return Math.sqrt(x*x + y*y);
+    }
+    else{
+        return Math.sqrt(x*x + y*y + z*z);
+    }
+
+
+ -- Defines a point with origin in [0, 0]; * @typedef Point * @property {Array<Number>} Components 
+
+}
+*/
+

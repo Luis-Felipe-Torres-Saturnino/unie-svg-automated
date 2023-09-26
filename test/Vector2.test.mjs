@@ -1,4 +1,5 @@
-import { Vector3, Vector2 } from "../library/Vector.mjs"
+import { Vector3, Vector2 } from "../src/library/Vector.mjs"
+import { a } from "../src/library/Vector.mjs";
 /* const Vector2 = require("../library/Vector").Vector2; */
 let vectors = [
     new Vector2(1, 2),
@@ -12,7 +13,7 @@ vectors.forEach((v)=> {
     console.log(v);
 });
 
-console.clear()
-console.log('not', vectors[0])
-vectors[0].Normal()
-console.log('normal', vectors[0])
+console.clear();
+console.log('not', vectors[0]);
+vectors[0].Normal();
+console.log('normal', vectors[0]);
